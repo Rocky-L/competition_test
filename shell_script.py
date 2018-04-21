@@ -6,6 +6,7 @@ from math import sqrt, sin, cos, sqrt, atan2
 from sklearn import linear_model
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import mean_squared_error
+from sklearn.preprocessing import MinMaxScaler
 
 trainDataFilePath = os.path.join(os.getcwd(), 'local.csv')
 dateParser = lambda x: pd.datetime.fromtimestamp(float(x))
@@ -19,7 +20,8 @@ def create_X_dataset():
     intermediateFeatures['right_n_left_turns'] = np.add(intermediateFeatures.right_dir_sum, intermediateFeatures.left_dir_sum)
     features = intermediateFeatures.groupby('terminalno').apply(features_per_trip)
     features['total_height_changes_per_person'] = np.add(features.up_height_per_trip, features.down_height_per_trip)
-    return features
+    featureCols = [ ele for ele in features.columns if ele != 'terminalno' and 'trip_id' ]
+    return features, featureCols
 
 def create_Y_dataset():
     Y = df[['terminalno', 'y']].drop_duplicates()
@@ -28,9 +30,10 @@ def create_Y_dataset():
     return Y
 
 # FIXME: normalization caused the inf problem
-def normalization(dataframe):
-    normalized = (dataframe - dataframe.mean()) / (dataframe.min())
-    return normalized
+def normalization(dataframe, featureCols):
+    scaler = MinMaxScaler()
+    dataframe[featureCols] = scaler.fit_transform(dataframe[featureCols])
+    return dataframe
 
 def map_features(dataframe):
     featuresMap = {
@@ -97,9 +100,9 @@ df['dir_diff'] = df.direction.diff()
 df['height_diff'] = df.height.diff()
 df = df.fillna(0)
 
-X = create_X_dataset()
+X, featureCols = create_X_dataset()
 Y = create_Y_dataset()
-X = normalization(X)
+X = normalization(X, featureCols)
 
 X_train, X_test, Y_train, Y_test = train_test_split(X, Y, test_size=0.2, random_state=0)
 model = linear_model.LinearRegression()

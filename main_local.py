@@ -31,9 +31,9 @@ def run():
             'y']
     
     featureService = FeatureEngineering(df)
-    X = featureService.create_X_dataset()
+    X, featureCols = featureService.create_X_dataset()
     Y = featureService.create_Y_dataset()
-    X = featureService.normalization(X)
+    X = featureService.normalization(X, featureCols)
 
     X_train, X_test, Y_train, Y_test = train_test_split(X, Y, test_size=0.2, random_state=0)
     model = linear_model.LinearRegression()

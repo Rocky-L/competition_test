@@ -1,5 +1,5 @@
 import os
-import keras
+# import keras
 import pandas as pd
 import numpy as np
 
@@ -21,9 +21,19 @@ def model_evaluation(model, X, Y):
 
 def model_prediction(model):
 
-    test_df = pd.read_csv(testDataFilePath, index_col=0, squeeze=True, parse_dates=['TIME'], date_parser=dateParser)
+    test_df = pd.read_csv(testDataFilePath, parse_dates=['TIME'], date_parser=dateParser)
+    test_df.columns = ['terminalno',
+            'time',
+            'trip_id',
+            'longitude',
+            'latitude',
+            'direction',
+            'height',
+            'speed',
+            'callstate']
     feat_serv = FeatureEngineering(test_df)
-    X = feat_serv.create_X_dataset()
+    X, featureCols = feat_serv.create_X_dataset()
+    X = feat_serv.normalization(X, featureCols)
 
     predict = model.predict(X)
     predict = pd.Series(predict[:,0])
@@ -48,9 +58,9 @@ def run():
             'y']
     
     featureService = FeatureEngineering(df)
-    X = featureService.create_X_dataset()
+    X, featureCols = featureService.create_X_dataset()
     Y = featureService.create_Y_dataset()
-    X = featureService.normalization(X)
+    X = featureService.normalization(X, featureCols)
 
     model = linear_model.LinearRegression()
     model.fit(X, Y)
@@ -59,7 +69,7 @@ def run():
     print('------- saving results -------')
     predictions.to_csv('./model/results.csv', index=False)
 
-if __name__ = "__main__":
+if __name__ == "__main__":
 
     print('-------- run begins --------')
     run()

@@ -2,6 +2,8 @@ import pandas as pd
 import numpy as np
 from math import sin, cos, sqrt, atan2
 
+from sklearn.preprocessing import MinMaxScaler
+
 class FeatureEngineering(object):
 
     def __init__(self, df):
@@ -25,8 +27,9 @@ class FeatureEngineering(object):
         intermediateFeatures['right_n_left_turns'] = np.add(intermediateFeatures.right_dir_sum, intermediateFeatures.left_dir_sum)
         features = intermediateFeatures.groupby('terminalno').apply(self.features_per_trip)
         features['total_height_changes_per_person'] = np.add(features.up_height_per_trip, features.down_height_per_trip)
+        featureCols = [ ele for ele in features.columns if ele != 'terminalno' and 'trip_id' ]
 
-        return features
+        return features, featureCols
     
     def create_Y_dataset(self):
 
@@ -36,9 +39,10 @@ class FeatureEngineering(object):
         
         return Y
     
-    def normalization(self, dataframe):
-        normalized = (dataframe - dataframe.mean()) / (dataframe.min())
-        return normalized
+    def normalization(self, dataframe, featureCols):
+        scaler = MinMaxScaler()
+        dataframe[featureCols] = scaler.fit_transform(dataframe[featureCols])
+        return dataframe
     
     def map_features(self, dataframe):
 
